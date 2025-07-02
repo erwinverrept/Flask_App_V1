@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edelsteen Analyse</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; color: #333; max-width: 800px; margin: 40px auto; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #5a4b81; text-align: center; }
+        form { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .upload-area { border: 2px dashed #ccc; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; background-color: #fff; }
+        .upload-area:hover { border-color: #5a4b81; }
+        input[type="file"] { display: none; }
+        button { background-color: #5a4b81; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; }
+        button:hover { background-color: #43356e; }
+        .error { color: #d9534f; background-color: #f2dede; border: 1px solid #ebccd1; padding: 15px; border-radius: 4px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Upload een foto van een edelsteen 💎</h1>
+    
+    {% if error %}
+        <div class="error"><strong>Fout:</strong> {{ error }}</div>
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data">
+        <label for="file" class="upload-area">
+            Klik hier om een afbeelding te kiezen
+            <br>
+            <span id="file-name" style="font-style: italic; color: #666;"></span>
+        </label>
+        <input type="file" name="file" id="file" accept="image/*" required>
+        <button type="submit">Analyseer</button>
+    </form>
+
+    <div id="preview-container" style="display:none; margin: 30px auto 0 auto; max-width: 350px; border: 2px solid #5a4b81; border-radius: 8px; background: #fff; padding: 16px; text-align: center;">
+        <img id="preview-image" src="#" alt="Voorbeeld afbeelding" style="max-width: 100%; max-height: 300px; border-radius: 6px;" />
+    </div>
+
+    <script>
+        document.getElementById('file').onchange = function () {
+            var fileInput = this;
+            var fileNameSpan = document.getElementById('file-name');
+            var previewContainer = document.getElementById('preview-container');
+            var previewImage = document.getElementById('preview-image');
+            if (fileInput.files && fileInput.files[0]) {
+                fileNameSpan.textContent = fileInput.files[0].name;
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                fileNameSpan.textContent = '';
+                previewContainer.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>

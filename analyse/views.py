@@ -102,31 +102,19 @@ def index():
     if request.method == 'POST':
         if 'file' not in request.files:
             return redirect(request.url)
-        
         file = request.files['file']
-        
         if file.filename == '':
             return redirect(request.url)
-            
         if file:
-            # Gebruik secure_filename om de bestandsnaam te beveiligen
             filename = secure_filename(file.filename)
             filepath = os.path.join(UPLOAD_FOLDER, filename)
             file.save(filepath)
-            
-            # Analyseer de afbeelding
             kleuren, beschrijving, error = analyseer_afbeelding(filepath)
-            
-            # Haal EXIF data op
             exif_data = get_exif_data(filepath)
-
             if error:
-                return render_template('index.html', error=error)
-
-            # Geef de bestandsnaam door aan de resultaatpagina
+                return render_template('analyse.html', error=error)
             return render_template('resultaat.html', kleuren=kleuren, beschrijving=beschrijving, image_name=filename, exif_data=exif_data)
-            
-    return render_template('index.html')
+    return render_template('analyse.html')
 
 
 # --- NIEUWE ROUTE OM AFBEELDINGEN TE TONEN ---
