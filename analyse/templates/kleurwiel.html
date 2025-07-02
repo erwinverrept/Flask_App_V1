@@ -246,7 +246,8 @@
             function drawColorWheel() {
                 // Teken het buitenste HUE-spectrum
                 for (let i = 0; i < 360; i++) {
-                    const angle = i * Math.PI / 180;
+                    // Gebruik dezelfde hoek als de markers: 0° = boven
+                    const angle = (i - 90) * Math.PI / 180;
                     ctx.beginPath();
                     ctx.moveTo(centerX, centerY);
                     ctx.arc(centerX, centerY, radius, angle, angle + (Math.PI / 180), false);
@@ -320,7 +321,8 @@
                 rgbOutputSpan.textContent = `R: ${r}, G: ${g}, B: ${b}`;
 
                 // Plaats de marker op het kleurenwiel
-                const angle = (hue - 90) * Math.PI / 180; // -90 graden om 0 graden bovenaan te krijgen
+                // Pas de hoek aan zodat 0° overeenkomt met boven (standaard kleurwiel)
+                const angle = (hue - 90) * Math.PI / 180;
                 const markerX = centerX + radius * Math.cos(angle);
                 const markerY = centerY + radius * Math.sin(angle);
                 marker.style.left = `${markerX}px`;
@@ -333,23 +335,32 @@
                 const markerDiv = document.createElement('div');
                 markerDiv.className = 'csv-marker';
                 markerDiv.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-                
+
                 // Bepaal contrastkleur voor de nummering
                 const [r, g, b] = hslToRgb(hue, saturation, lightness);
-                // Bereken luminantie voor tekstkleur (Web Content Accessibility Guidelines formula)
                 const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-                markerDiv.style.color = luminance > 0.5 ? 'black' : 'white'; // Zwarte tekst op lichte achtergrond, witte tekst op donkere
+                markerDiv.style.color = luminance > 0.5 ? 'black' : 'white';
+
+                // Bepaal de afstand tot het midden op basis van saturation en lightness
+                // Saturation bepaalt de afstand van het midden naar de rand (0% = midden, 100% = rand)
+                // Lightness 50% = maximale verzadiging, <50% dichter naar het midden, >50% ook dichter naar het midden
+                // We nemen de minimale afstand van het midden als lightness afwijkt van 50%
+                let sat = saturation / 100;
+                let light = lightness / 100;
+                let maxRadius = radius;
+                let lFactor = 1 - 2 * Math.abs(light - 0.5); // 1 bij 50%, 0 bij 0% of 100%
+                let markerRadius = maxRadius * sat * lFactor;
+                if (markerRadius < 10) markerRadius = 10; // voorkom dat marker in het midden valt
 
                 const angle = (hue - 90) * Math.PI / 180;
-                const markerX = centerX + radius * Math.cos(angle);
-                const markerY = centerY + radius * Math.sin(angle);
+                const markerX = centerX + markerRadius * Math.cos(angle);
+                const markerY = centerY + markerRadius * Math.sin(angle);
                 markerDiv.style.left = `${markerX}px`;
                 markerDiv.style.top = `${markerY}px`;
 
-                markerDiv.textContent = index + 1; // Nummering
-                markerDiv.title = `H: ${hue}° S: ${saturation}% L: ${lightness}%`; // Tooltip
+                markerDiv.textContent = index + 1;
+                markerDiv.title = `H: ${hue}° S: ${saturation}% L: ${lightness}%`;
 
-                // Dubbelklik: zet geselecteerde kleur in het veld
                 markerDiv.ondblclick = function() {
                     hueSlider.value = hue;
                     updateColorDisplay(hue);
@@ -358,7 +369,6 @@
                     resultColorBox.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
                 };
 
-                // Voeg toe aan de container van het kleurenwiel
                 canvas.parentElement.appendChild(markerDiv);
             }
 
@@ -428,7 +438,7 @@
                             }
                         }
                     }
-                    if (hslStringCol === -1) { // If no HSL string column found, default to H, S, L numeric
+                    if (hslStringCol === -1) { // If no HSL string column found, default to H, S, L numerically
                         hueCol = 0;
                         satCol = 1;
                         lightCol = 2;
