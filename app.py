@@ -16,5 +16,9 @@ def index():
 def analyse_redirect():
     return redirect(url_for('analyse.index'))
 
+@app.route('/export')
+def export_redirect():
+    return redirect(url_for('analyse.export_csv'))
+
 if __name__ == '__main__':
     app.run(debug=True)
