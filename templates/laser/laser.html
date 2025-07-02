@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Laser Control{% endblock %}
+
+{% block content %}
+    <h1>Laser Control</h1>
+    <p>Turn the laser on or off (GPIO pin 24).</p>
+
+    <form onsubmit="return false;">
+        <div class="laser-controls">
+            <button id="btn-laser-on" type="button" class="btn btn-success">Laser ON</button>
+            <button id="btn-laser-off" type="button" class="btn btn-danger">Laser OFF</button>
+        </div>
+
+        <div class="status-container mt-3">
+            <h3>Status: <span id="laser-status">OFF</span></h3>
+        </div>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnOn = document.getElementById('btn-laser-on');
+            const btnOff = document.getElementById('btn-laser-off');
+            const statusText = document.getElementById('laser-status');
+
+            async function setLaserState(state) {
+                btnOn.disabled = true;
+                btnOff.disabled = true;
+
+                try {
+                    const response = await fetch('/laser/api/set_state', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ state: state })
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        console.log(result.message);
+                        if (state) {
+                            statusText.textContent = 'ON';
+                        } else {
+                            statusText.textContent = 'OFF';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error calling API:', error);
+                } finally {
+                    btnOn.disabled = false;
+                    btnOff.disabled = false;
+                }
+            }
+
+            btnOn.addEventListener('click', () => setLaserState(true));
+            btnOff.addEventListener('click', () => setLaserState(false));
+        });
+    </script>
+{% endblock %}

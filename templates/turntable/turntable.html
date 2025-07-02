@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Turntable Control{% endblock %}
+
+{% block content %}
+    <h1>Turntable - 360°</h1>
+
+    <form id="turntable-form" onsubmit="return false;">
+        <div class="main-controls">
+            <fieldset>
+                <legend>Choose direction</legend>
+                <input type="radio" id="dir-left" name="direction" value="left" checked>
+                <label for="dir-left">Left</label>
+                <input type="radio" id="dir-right" name="direction" value="right">
+                <label for="dir-right">Right</label>
+            </fieldset>
+
+            <fieldset>
+                <legend>Enter degrees</legend>
+                <input type="number" id="degrees-input" min="0" value="90">
+                <label for="degrees-input">degrees</label>
+            </fieldset>
+
+            <button id="btn-execute-turn" type="button" class="btn btn-primary">Turn</button>
+        </div>
+
+        <style>
+            .main-controls { display: flex; justify-content: center; align-items: center; gap: 20px; background-color: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+            .main-controls fieldset { border: 1px solid #ccc; border-radius: 5px; padding: 10px; }
+            .main-controls legend { font-weight: bold; padding: 0 5px; } /* Adjusted padding */
+            .main-controls input[type="number"] { width: 80px; padding: 8px; font-size: 16px; }
+            .main-controls button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; }
+            .main-controls button:disabled { background-color: #aaa; }
+            .circle-container { position: relative; width: 400px; height: 400px; margin: 20px auto; border: 2px solid black; border-radius: 50%; }
+            .degree-line { position: absolute; bottom: 50%; left: 50%; width: 2px; height: 50%; background-color: #ccc; transform-origin: bottom center; }
+            .degree-line.major { background-color: #555; }
+            .degree-label { position: absolute; bottom: calc(50% + 200px); left: 50%; transform-origin: 0 220px; font-size: 12px; }
+            .arrow { position: absolute; bottom: 50%; left: 50%; width: 4px; height: 180px; background-color: red; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.5s ease; }
+            .arrow::after { content: ''; position: absolute; top: -10px; left: -6px; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 15px solid red; }
+            .button-container { text-align: center; margin-top: 20px; }
+            .button-container button { padding: 15px 30px; font-size: 18px; margin: 0 10px; cursor: pointer; border-radius: 8px; border: 1px solid #555; background-color: #e9e9ed; }
+            .button-container button:hover { background-color: #d0d0d5; }
+        </style>
+
+        <div class="circle-container">
+            <div class="arrow" id="arrow"></div>
+            {% for i in degrees %}
+                <div class="degree-line {% if i % 10 == 0 %}major{% endif %}" style="transform: translateX(-50%) rotate({{ i }}deg);"></div>
+                {% if i % 30 == 0 %}
+                    <div class="degree-label" style="transform: translateX(-50%) rotate({{ i }}deg);"><span style="display:inline-block; transform: rotate(-{{i}}deg);">{{ i }}°</span></div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="button-container">
+            <p>Fine adjustment:</p>
+            <button id="btn-jog-left" type="button" class="btn btn-secondary">Jog Left</button>
+            <button id="btn-jog-right" type="button" class="btn btn-secondary">Jog Right</button>
+        </div>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DEBUG: DOM loaded. Script running.");
+
+            const degreesInput = document.getElementById('degrees-input');
+            const executeBtn = document.getElementById('btn-execute-turn');
+            const arrow = document.getElementById('arrow');
+            const btnJogLeft = document.getElementById('btn-jog-left');
+            const btnJogRight = document.getElementById('btn-jog-right');
+
+            console.log("DEBUG: Degrees input:", degreesInput);
+            console.log("DEBUG: Turn button:", executeBtn);
+
+            function updateArrowPosition(degrees) {
+                arrow.style.transform = `translateX(-50%) rotate(${degrees}deg)`;
+            }
+
+            async function executeTurn() {
+                console.log("DEBUG: 'Turn' button clicked.");
+
+                const direction = document.querySelector('input[name="direction"]:checked').value;
+                const degrees = parseFloat(degreesInput.value);
+
+                if (isNaN(degrees) || degrees <= 0) {
+                    alert('Please enter a valid number of degrees.');
+                    return;
+                }
+                
+                executeBtn.disabled = true;
+                executeBtn.textContent = 'Turning...';
+
+                try {
+                    const response = await fetch('/api/turn_by_degrees', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ direction: direction, degrees: degrees })
+                    });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        updateArrowPosition(result.new_angle);
+                    }
+                } catch (error) {
+                    console.error('Error in executeTurn:', error);
+                } finally {
+                    executeBtn.disabled = false;
+                    executeBtn.textContent = 'Turn';
+                }
+            }
+
+            async function jogMotor(direction) {
+                console.log(`DEBUG: 'Jog ${direction}' button clicked.`);
+
+                btnJogLeft.disabled = true;
+                btnJogRight.disabled = true;
+
+                try {
+                    const response = await fetch('/api/jog', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ direction: direction })
+                    });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        updateArrowPosition(result.new_angle);
+                    }
+                } catch (error) {
+                    console.error('Error in jogMotor:', error);
+                } finally {
+                    btnJogLeft.disabled = false;
+                    btnJogRight.disabled = false;
+                }
+            }
+
+            if (executeBtn) {
+                executeBtn.addEventListener('click', executeTurn);
+            } else {
+                console.error("ERROR: Could not add event listener to 'Turn' button (not found).");
+            }
+            
+            if (btnJogLeft) {
+                btnJogLeft.addEventListener('click', () => jogMotor('left'));
+            }
+
+            if (btnJogRight) {
+                btnJogRight.addEventListener('click', () => jogMotor('right'));
+            }
+        });
+    </script>
+{% endblock %}
