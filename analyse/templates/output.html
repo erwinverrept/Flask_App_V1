@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>CSV Exporteren</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; color: #333; max-width: 500px; margin: 40px auto; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #5a4b81; text-align: center; }
+        form { display: flex; flex-direction: column; gap: 15px; }
+        label { font-weight: bold; }
+        input[type="text"] { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        button { background-color: #5a4b81; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #43356e; }
+    </style>
+</head>
+<body>
+    <h1>Exporteer naar CSV</h1>
+    <form method="post">
+        <label for="filename">Bestandsnaam (zonder extensie):</label>
+        <input type="text" id="filename" name="filename" required>
+        <button type="submit">Exporteer</button>
+    </form>
+    <form action="/" method="get" style="margin-top: 20px;">
+        <button type="submit" style="background-color: #ccc; color: #333;">Terug naar analyse</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse Resultaat</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; color: #333; max-width: 800px; margin: 40px auto; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2 { color: #5a4b81; }
+        h1 { text-align: center; }
+        .result-container { display: flex; flex-direction: column; gap: 30px; }
+        .section { background-color: #fff; padding: 20px; border-radius: 8px; }
+        .color-list { list-style: none; padding: 0; }
+        .color-item { display: flex; align-items: center; margin-bottom: 10px; }
+        .color-swatch { width: 40px; height: 40px; border-radius: 5px; margin-right: 15px; border: 1px solid #ddd; }
+        .color-info { font-size: 16px; }
+        /* Stijl voor de afbeelding */
+        .uploaded-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
+        a { display: block; text-align: center; margin-top: 30px; text-decoration: none; background-color: #5a4b81; color: white; padding: 12px 25px; border-radius: 5px; transition: background-color 0.3s; width: 100%; box-sizing: border-box; }
+        a:hover { background-color: #43356e; }
+    </style>
+</head>
+<body>
+    <h1>Analyse van: {{ image_name }}</h1>
+
+    <div class="result-container">
+        <div class="section">
+            <h2>Geüploade Afbeelding</h2>
+            <img src="{{ url_for('uploaded_file', filename=image_name) }}" alt="Geüploade edelsteen" class="uploaded-image">
+        </div>
+
+        <div class="section">
+            <h2>Beschrijving</h2>
+            <p>{{ beschrijving }}</p>
+        </div>
+        <!-- Voeg deze nieuwe sectie toe binnen de result-container div -->
+        <div class="section">
+            <h2>Camera Informatie</h2>
+        {% if exif_data %}
+            <div class="exif-info">
+            {% if exif_data.get('Make') %}
+            <span class="exif-label">Camera merk:</span>
+            <span class="exif-value">{{ exif_data.Make }}</span>
+            {% endif %}
+
+            {% if exif_data.get('Model') %}
+            <span class="exif-label">Camera model:</span>
+            <span class="exif-value">{{ exif_data.Model }}</span>
+            {% endif %}
+
+            {% if exif_data.get('DateTimeOriginal') %}
+            <span class="exif-label">Opnamedatum:</span>
+            <span class="exif-value">{{ exif_data.DateTimeOriginal }}</span>
+            {% endif %}
+
+            {% if exif_data.get('ExposureTime') %}
+            <span class="exif-label">Sluitertijd:</span>
+            <span class="exif-value">{{ exif_data.ExposureTime }}</span>
+            {% endif %}
+
+            {% if exif_data.get('FNumber') %}
+            <span class="exif-label">Diafragma:</span>
+            <span class="exif-value">{{ exif_data.FNumber }}</span>
+            {% endif %}
+
+            {% if exif_data.get('ISOSpeedRatings') %}
+            <span class="exif-label">ISO:</span>
+            <span class="exif-value">{{ exif_data.ISOSpeedRatings }}</span>
+            {% endif %}
+
+            {% if exif_data.get('FocalLength') %}
+            <span class="exif-label">Brandpuntsafstand:</span>
+            <span class="exif-value">{{ exif_data.FocalLength }}</span>
+            {% endif %}
+        </div>
+        {% else %}
+        <p>Geen EXIF informatie beschikbaar voor deze afbeelding.</p>
+         {% endif %}
+</div>
+        <div class="section">
+            <h2>Dominante Kleuren</h2>
+            <table style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding: 8px; border-bottom: 2px solid #ddd;">Kleur</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 2px solid #ddd;">Percentage</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 2px solid #ddd;">PixelFraction</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 2px solid #ddd;">Score</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 2px solid #ddd;">Hue/Sat/Lumin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kleur in kleuren %}
+                    <tr>
+                        <td style="padding: 8px;">
+                            <span style="display: inline-block; width: 30px; height: 30px; background-color: {{ kleur.rgb }}; border: 1px solid #ccc; border-radius: 4px;"></span>
+                        </td>
+                        <td style="padding: 8px;">{{ kleur.percentage }}%</td>
+                        <td style="padding: 8px;">{{ kleur.pixelFraction }}</td>
+                        <td style="padding: 8px;">{{ kleur.score }}</td>
+                        <td style="padding: 8px;">{{ kleur.hsl }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <a href="/export" style="display: block; text-align: center; margin-top: 20px; text-decoration: none; background-color: #4CAF50; color: white; padding: 12px 25px; border-radius: 5px; transition: background-color 0.3s; width: 100%; box-sizing: border-box;">Exporteer analyse naar CSV</a>
+    <a href="/" style="display: block; text-align: center; margin-top: 10px; text-decoration: none; background-color: #5a4b81; color: white; padding: 12px 25px; border-radius: 5px; transition: background-color 0.3s; width: 100%; box-sizing: border-box;">Analyseer een andere afbeelding</a>
+
+</body>
+</html>

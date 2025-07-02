@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSL Kleurenwiel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+            max-width: 900px; /* Max breedte voor grotere schermen */
+            width: 100%;
+        }
+        .color-wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 30px;
+        }
+        .color-wheel-canvas {
+            border-radius: 50%;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* Stijl voor de slider marker */
+        .marker {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: white;
+            border: 2px solid #3b82f6; /* Blauwe rand */
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* Zorgt ervoor dat de marker geen klikgebeurtenissen blokkeert */
+            z-index: 10; /* Zorg dat deze boven het canvas ligt */
+        }
+        /* Stijl voor de CSV markers */
+        .csv-marker {
+            position: absolute;
+            width: 20px; /* Iets groter voor de nummering */
+            height: 20px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            color: #333; /* Standaard tekstkleur */
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            cursor: default;
+            z-index: 5; /* Zorg dat deze boven het canvas ligt, maar onder de slider marker */
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .csv-marker:hover {
+            transform: translate(-50%, -50%) scale(1.2); /* Iets groter bij hover */
+        }
+        .result-box {
+            width: 100px;
+            height: 100px;
+            margin: 20px auto;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            transition: background-color 0.3s ease;
+        }
+        input[type="range"] {
+            width: 80%;
+            -webkit-appearance: none;
+            height: 8px;
+            background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); /* Regenboogkleuren */
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.9;
+            transition: opacity .2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6; /* Blauwe duim */
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .suggested-colors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            justify-items: center;
+        }
+        .suggested-color-item {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #4a5568;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .suggested-color-box {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">HSL Kleurenwiel Visualisatie</h1>
+
+        <p class="text-gray-600 mb-6">
+            Gebruik de schuifregelaar om de HUE (tint) te wijzigen en zie hoe de kleur op het wiel en in de voorbeeldbox verandert.
+            De Saturatie en Lightness zijn standaard ingesteld op 100% en 50% voor optimale weergave op het kleurenwiel.
+        </p>
+
+        <div class="color-wheel-container">
+            <canvas id="colorWheelCanvas" class="color-wheel-canvas"></canvas>
+            <div id="marker" class="marker hidden"></div>
+            <!-- CSV markers worden hier dynamisch toegevoegd -->
+            <p id="csvErrorMessage" class="text-red-500 absolute w-full bottom-0 left-0 hidden text-sm">Fout bij het lezen van CSV-bestand.</p>
+        </div>
+
+        <div class="mb-6">
+            <label for="hueSlider" class="block text-gray-700 text-lg font-semibold mb-2">HUE (Tint): <span id="hueValue">0</span>°</label>
+            <input type="range" id="hueSlider" min="0" max="359" value="0" class="w-full">
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Geselecteerde Kleur:</h2>
+            <div id="resultColorBox" class="result-box mx-auto"></div>
+            <p class="text-gray-700 mt-2">HSL: <span id="hslOutput">H: 0°, S: 100%, L: 50%</span></p>
+            <p class="text-gray-700">RGB: <span id="rgbOutput">R: 255, G: 0, B: 0</span></p>
+        </div>
+
+        <!-- Nieuwe sectie voor CSV-upload -->
+        <div class="csv-upload-section mt-8 pt-8 border-t border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">HSL Waarden uit CSV Bestand</h2>
+            <p class="text-gray-600 mb-4">Upload een CSV-bestand met dominante HSL-kleurwaarden (formaat: `hue,saturation,lightness` of `H,S,L` of een "hsl" kolom met `(H, S%, L%)` formaat per regel) om markeringen op het kleurenwiel te plaatsen.</p>
+            <input type="file" id="csvFileInput" accept=".csv" class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100 mb-4 cursor-pointer">
+            <button id="clearCsvMarkersBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 mt-2">
+                Wis CSV-markeringen
+            </button>
+        </div>
+
+        <!-- Sectie voor Gemini API feature -->
+        <div class="gemini-feature-section mt-8 pt-8 border-t border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Harmonieuze Kleuren Suggesties ✨</h2>
+            <p class="text-gray-600 mb-4">
+                Laat de AI harmonieuze kleurenpaletten genereren op basis van uw geselecteerde HUE.
+            </p>
+            <button id="generateColorsBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Genereer Harmonieuze Kleuren ✨
+            </button>
+
+            <div id="loadingSpinner" class="loading-spinner hidden"></div>
+            <div id="suggestedColorsContainer" class="suggested-colors-grid">
+                <!-- Suggested colors will be inserted here -->
+            </div>
+            <p id="geminiErrorMessage" class="text-red-500 mt-4 hidden">Er is een fout opgetreden bij het genereren van kleuren.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('colorWheelCanvas');
+            const ctx = canvas.getContext('2d');
+            const hueSlider = document.getElementById('hueSlider');
+            const hueValueSpan = document.getElementById('hueValue');
+            const resultColorBox = document.getElementById('resultColorBox');
+            const hslOutputSpan = document.getElementById('hslOutput');
+            const rgbOutputSpan = document.getElementById('rgbOutput');
+            const marker = document.getElementById('marker'); // Slider marker
+
+            // Nieuwe elementen voor CSV functionaliteit
+            const csvFileInput = document.getElementById('csvFileInput');
+            const csvErrorMessage = document.getElementById('csvErrorMessage'); // Error message for CSV
+            const clearCsvMarkersBtn = document.getElementById('clearCsvMarkersBtn');
+            
+            // Elementen voor Gemini API
+            const generateColorsBtn = document.getElementById('generateColorsBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const suggestedColorsContainer = document.getElementById('suggestedColorsContainer');
+            const geminiErrorMessage = document.getElementById('geminiErrorMessage'); // Error message for Gemini
+
+            let wheelSize = 300;
+            canvas.width = wheelSize;
+            canvas.height = wheelSize;
+            let centerX = wheelSize / 2;
+            let centerY = wheelSize / 2;
+            let radius = wheelSize / 2;
+
+            let csvColorData = []; // Om HSL data van CSV op te slaan
+
+            function drawColorWheel() {
+                // Teken het buitenste HUE-spectrum
+                for (let i = 0; i < 360; i++) {
+                    const angle = i * Math.PI / 180;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, radius, angle, angle + (Math.PI / 180), false);
+                    ctx.closePath();
+                    ctx.fillStyle = `hsl(${i}, 100%, 50%)`;
+                    ctx.fill();
+                }
+
+                // Overlay voor Lightness (wit naar transparant)
+                let gradientLightness = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+                gradientLightness.addColorStop(0, 'rgba(255, 255, 255, 1)'); // Wit in het midden
+                gradientLightness.addColorStop(0.5, 'rgba(255, 255, 255, 0)'); // Transparant halverwege
+                gradientLightness.addColorStop(1, 'rgba(255, 255, 255, 0)'); // Transparant aan de rand
+
+                ctx.fillStyle = gradientLightness;
+                ctx.fillRect(0, 0, wheelSize, wheelSize);
+
+                // Overlay voor Donkerte (zwart naar transparant)
+                let gradientDarkness = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+                gradientDarkness.addColorStop(0, 'rgba(0, 0, 0, 0)'); // Transparant in het midden
+                gradientDarkness.addColorStop(0.5, 'rgba(0, 0, 0, 0)'); // Transparant halverwege
+                gradientDarkness.addColorStop(1, 'rgba(0, 0, 0, 1)'); // Zwart aan de rand
+
+                ctx.fillStyle = gradientDarkness;
+                ctx.fillRect(0, 0, wheelSize, wheelSize);
+            }
+
+            // Functie om HSL naar RGB om te zetten
+            // H, S, L moeten genormaliseerd zijn (H: 0-359, S: 0-100, L: 0-100)
+            function hslToRgb(h, s, l) {
+                s /= 100;
+                l /= 100;
+                let c = (1 - Math.abs(2 * l - 1)) * s,
+                    x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+                    m = l - c / 2,
+                    r = 0,
+                    g = 0,
+                    b = 0;
+
+                if (0 <= h && h < 60) {
+                    r = c; g = x; b = 0;
+                } else if (60 <= h && h < 120) {
+                    r = x; g = c; b = 0;
+                } else if (120 <= h && h < 180) {
+                    r = 0; g = c; b = x;
+                } else if (180 <= h && h < 240) {
+                    r = 0; g = x; b = c;
+                } else if (240 <= h && h < 300) {
+                    r = x; g = 0; b = c;
+                } else if (300 <= h && h < 360) {
+                    r = c; g = 0; b = x;
+                }
+                r = Math.round((r + m) * 255);
+                g = Math.round((g + m) * 255);
+                b = Math.round((b + m) * 255);
+
+                return [r, g, b];
+            }
+
+            // Functie om de kleur en marker voor de slider te updaten
+            function updateColorDisplay(hue) {
+                const saturation = 100; // Vaste saturatie voor het kleurenwiel
+                const lightness = 50;   // Vaste lightness voor het kleurenwiel
+
+                hueValueSpan.textContent = hue;
+
+                const [r, g, b] = hslToRgb(hue, saturation, lightness);
+                resultColorBox.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+
+                hslOutputSpan.textContent = `H: ${hue}°, S: ${saturation}%, L: ${lightness}%`;
+                rgbOutputSpan.textContent = `R: ${r}, G: ${g}, B: ${b}`;
+
+                // Plaats de marker op het kleurenwiel
+                const angle = (hue - 90) * Math.PI / 180; // -90 graden om 0 graden bovenaan te krijgen
+                const markerX = centerX + radius * Math.cos(angle);
+                const markerY = centerY + radius * Math.sin(angle);
+                marker.style.left = `${markerX}px`;
+                marker.style.top = `${markerY}px`;
+                marker.classList.remove('hidden');
+            }
+
+            // Functie om een CSV-marker toe te voegen
+            function addCsvMarker(hue, saturation, lightness, index) {
+                const markerDiv = document.createElement('div');
+                markerDiv.className = 'csv-marker';
+                markerDiv.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                
+                // Bepaal contrastkleur voor de nummering
+                const [r, g, b] = hslToRgb(hue, saturation, lightness);
+                // Bereken luminantie voor tekstkleur (Web Content Accessibility Guidelines formula)
+                const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+                markerDiv.style.color = luminance > 0.5 ? 'black' : 'white'; // Zwarte tekst op lichte achtergrond, witte tekst op donkere
+
+                const angle = (hue - 90) * Math.PI / 180;
+                const markerX = centerX + radius * Math.cos(angle);
+                const markerY = centerY + radius * Math.sin(angle);
+                markerDiv.style.left = `${markerX}px`;
+                markerDiv.style.top = `${markerY}px`;
+
+                markerDiv.textContent = index + 1; // Nummering
+                markerDiv.title = `H: ${hue}° S: ${saturation}% L: ${lightness}%`; // Tooltip
+
+                // Dubbelklik: zet geselecteerde kleur in het veld
+                markerDiv.ondblclick = function() {
+                    hueSlider.value = hue;
+                    updateColorDisplay(hue);
+                    hslOutputSpan.textContent = `H: ${hue}°, S: ${saturation}%, L: ${lightness}%`;
+                    rgbOutputSpan.textContent = `R: ${r}, G: ${g}, B: ${b}`;
+                    resultColorBox.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                };
+
+                // Voeg toe aan de container van het kleurenwiel
+                canvas.parentElement.appendChild(markerDiv);
+            }
+
+            // Functie om alle CSV-markers te wissen en opnieuw te tekenen
+            function clearAndRedrawCsvMarkers() {
+                document.querySelectorAll('.csv-marker').forEach(m => m.remove());
+                csvColorData.forEach((color, index) => {
+                    addCsvMarker(color.hue, color.saturation, color.lightness, index);
+                });
+            }
+
+            // Functie om CSV-inhoud te parsen en HSL-kolommen te detecteren
+            function parseCsvAndAddMarkers(csvContent) {
+                csvColorData = []; // Reset opgeslagen data
+                clearAndRedrawCsvMarkers(); // Wis huidige markers
+                csvErrorMessage.classList.add('hidden'); // Verberg eerdere foutmeldingen
+
+                const lines = csvContent.split('\n').filter(line => line.trim() !== '');
+
+                if (lines.length === 0) {
+                    csvErrorMessage.textContent = 'CSV-bestand is leeg.';
+                    csvErrorMessage.classList.remove('hidden');
+                    return;
+                }
+
+                let headers = [];
+                let dataLines = lines;
+                let hueCol = -1, satCol = -1, lightCol = -1, hslStringCol = -1;
+
+                // Robust split for headers to handle commas inside quotes if they exist, though not expected for simple headers
+                const rawFirstLineParts = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(part => part.trim());
+                const lowerCaseFirstLineParts = rawFirstLineParts.map(part => part.toLowerCase());
+                
+                // Determine if the first line is likely a header row
+                const isHeaderRow = lowerCaseFirstLineParts.some(header => 
+                    ['hue', 'h', 'tint', 'saturation', 's', 'verzadiging', 'lightness', 'l', 'helderheid', 'hsl'].includes(header)
+                );
+
+                if (isHeaderRow) {
+                    headers = lowerCaseFirstLineParts;
+                    dataLines = lines.slice(1);
+
+                    headers.forEach((header, index) => {
+                        if (header === 'hsl') { // Exact match for 'hsl' column header
+                            hslStringCol = index;
+                        } else if (['hue', 'h', 'tint'].includes(header)) {
+                            hueCol = index;
+                        } else if (['saturation', 's', 'verzadiging'].includes(header)) {
+                            satCol = index;
+                        } else if (['lightness', 'l', 'helderheid'].includes(header)) {
+                            lightCol = index;
+                        }
+                    });
+                } else {
+                    // No clear header row, assume the first three columns are H, S, L numerically
+                    // If we find a string format in the first data row, prioritize that
+                    const sampleDataLine = lines[0]; // If no headers, first line is data
+                    if (sampleDataLine && sampleDataLine.includes('(') && sampleDataLine.includes(')')) {
+                        // Attempt to find the column with HSL string format
+                        // Use a more robust split for data lines that might contain quoted commas
+                        const tempParts = sampleDataLine.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
+                        for (let i = 0; i < tempParts.length; i++) {
+                            // Check if the part matches the HSL string format, possibly with quotes
+                            if (tempParts[i].trim().match(/^"?\(\d+,\s*\d+%?,\s*\d+%?\)"?$/)) {
+                                hslStringCol = i;
+                                break;
+                            }
+                        }
+                    }
+                    if (hslStringCol === -1) { // If no HSL string column found, default to H, S, L numeric
+                        hueCol = 0;
+                        satCol = 1;
+                        lightCol = 2;
+                        console.warn("Geen duidelijke HSL-headers of string formaat gevonden. Er wordt aangenomen dat de eerste drie kolommen H, S, L zijn.");
+                    }
+                }
+
+                let validMarkersCount = 0;
+                dataLines.forEach((line, index) => {
+                    // Use a more robust split for data lines that might contain quoted commas
+                    const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
+                    
+                    let hue, saturation, lightness;
+
+                    if (hslStringCol !== -1 && parts[hslStringCol] !== undefined) {
+                        // Parse HSL from string format like "(212, 26%, 49%)" or " (212, 26%, 49%) "
+                        let hslString = parts[hslStringCol].trim();
+                        // Remove outer quotes if present: "(212, 26%, 49%)" -> (212, 26%, 49%)
+                        if (hslString.startsWith('"') && hslString.endsWith('"')) {
+                            hslString = hslString.slice(1, -1);
+                        }
+                        const match = hslString.match(/\((\d+),\s*(\d+)%?,\s*(\d+)%?\)/);
+                        if (match && match.length === 4) {
+                            hue = parseFloat(match[1]);
+                            saturation = parseFloat(match[2]);
+                            lightness = parseFloat(match[3]);
+                        } else {
+                            console.warn(`Kon HSL string op regel ${index + 1} niet parsen: ${hslString}`);
+                            return;
+                        }
+                    } else if (hueCol !== -1 && satCol !== -1 && lightCol !== -1 && 
+                               parts[hueCol] !== undefined && parts[satCol] !== undefined && parts[lightCol] !== undefined) {
+                        // Parse HSL from separate numeric columns
+                        hue = parseFloat(parts[hueCol].trim());
+                        saturation = parseFloat(parts[satCol].trim().replace('%', '')); // Remove % if present
+                        lightness = parseFloat(parts[lightCol].trim().replace('%', '')); // Remove % if present
+                    } else if (parts.length >= 3) {
+                        // Fallback: assume first 3 numeric columns are HSL
+                        hue = parseFloat(parts[0].trim().replace('%', ''));
+                        saturation = parseFloat(parts[1].trim().replace('%', ''));
+                        lightness = parseFloat(parts[2].trim().replace('%', ''));
+                    } else {
+                        console.warn(`Ongeldige regel in CSV (te weinig kolommen) op regel ${index + 1}: ${line}`);
+                        return;
+                    }
+
+                    if (!isNaN(hue) && !isNaN(saturation) && !isNaN(lightness)) {
+                        // Basic validation for HSL ranges
+                        if (hue >= 0 && hue <= 359 && saturation >= 0 && saturation <= 100 && lightness >= 0 && lightness <= 100) {
+                            csvColorData.push({ hue, saturation, lightness });
+                            validMarkersCount++;
+                        } else {
+                            console.warn(`Ongeldige HSL-waarden op regel ${index + 1} (buiten bereik): H:${hue}, S:${saturation}, L:${lightness}`);
+                        }
+                    } else {
+                        console.warn(`Niet-numerieke HSL-waarden op regel ${index + 1}: ${line}`);
+                    }
+                });
+
+                if (validMarkersCount === 0 && dataLines.length > 0) {
+                    csvErrorMessage.textContent = 'Geen geldige HSL-kleurwaarden gevonden in het CSV-bestand. Zorg voor het formaat: `hue,saturation,lightness` (numeriek, 0-359 voor hue, 0-100 voor sat/light), of gebruik headers zoals H, S, L, of een "hsl" kolom met `(H, S%, L%)` formaat.';
+                    csvErrorMessage.classList.remove('hidden');
+                } else {
+                    clearAndRedrawCsvMarkers(); // Teken nieuwe markers op basis van opgeslagen data
+                }
+            }
+
+            // Event listener voor de slider
+            hueSlider.addEventListener('input', (event) => {
+                const selectedHue = parseInt(event.target.value, 10);
+                updateColorDisplay(selectedHue);
+            });
+
+            // Event listener voor CSV-bestand input
+            csvFileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    parseCsvAndAddMarkers(e.target.result);
+                };
+                reader.readAsText(file);
+            });
+
+            // Event listener voor de "Wis CSV-markeringen" knop
+            clearCsvMarkersBtn.addEventListener('click', () => {
+                csvColorData = [];
+                clearAndRedrawCsvMarkers();
+                csvErrorMessage.classList.add('hidden'); // Verberg eventuele foutmeldingen
+                csvFileInput.value = ''; // Reset de file input
+            });
+
+            // Functie om harmonieuze kleuren te genereren via Gemini API
+            generateColorsBtn.addEventListener('click', async () => {
+                const currentHue = parseInt(hueSlider.value, 10);
+                suggestedColorsContainer.innerHTML = ''; // Wis eerdere suggesties
+                geminiErrorMessage.classList.add('hidden'); // Verberg eerdere foutmelding
+                loadingSpinner.classList.remove('hidden'); // Toon laadspinner
+                generateColorsBtn.disabled = true; // Schakel knop uit tijdens laden
+
+                try {
+                    let chatHistory = [];
+                    const prompt = `Given the HSL color H:${currentHue}, S:100%, L:50%, suggest 3 harmonious colors (analogous, complementary, triadic, etc.). Provide the output as a JSON array of objects, where each object has 'hue', 'saturation', and 'lightness' properties. Make sure saturation is 100 and lightness is 50 for the suggested colors to keep them vibrant. Ensure hue is between 0 and 359, saturation between 0 and 100, and lightness between 0 and 100. Example: [{'hue': 180, 'saturation': 100, 'lightness': 50}, {'hue': 30, 'saturation': 100, 'lightness': 50}, {'hue': 210, 'saturation': 100, 'lightness': 50}]`;
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                    const payload = {
+                        contents: chatHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        "hue": { "type": "NUMBER" },
+                                        "saturation": { "type": "NUMBER" },
+                                    },
+                                    "required": ["hue", "saturation", "lightness"]
+                                }
+                            }
+                        }
+                    };
+                    const apiKey = ""; // Canvas zal deze automatisch invullen
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const json = result.candidates[0].content.parts[0].text;
+                        const suggestedColors = JSON.parse(json);
+
+                        suggestedColors.forEach(color => {
+                            const { hue, saturation, lightness } = color;
+                            const [r, g, b] = hslToRgb(hue, saturation, lightness);
+
+                            const colorItem = document.createElement('div');
+                            colorItem.className = 'suggested-color-item';
+                            colorItem.innerHTML = `
+                                <div class="suggested-color-box" style="background-color: hsl(${hue}, ${saturation}%, ${lightness}%);"></div>
+                                <span>H: ${hue}°</span>
+                                <span>S: ${saturation}%</span>
+                                <span>L: ${lightness}%</span>
+                            `;
+                            suggestedColorsContainer.appendChild(colorItem);
+                        });
+                    } else {
+                        throw new Error('Geen geldige suggesties ontvangen van de API.');
+                    }
+                }
+                 catch (error) {
+                    console.error('Fout bij genereren van kleuren:', error);
+                    geminiErrorMessage.classList.remove('hidden');
+                } finally {
+                    loadingSpinner.classList.add('hidden'); // Verberg laadspinner
+                    generateColorsBtn.disabled = false; // Schakel knop in
+                }
+            });
+
+            // Zorg ervoor dat het canvas en de markers responsief zijn
+            const resizeCanvas = () => {
+                const containerWidth = canvas.parentElement.clientWidth;
+                const newSize = Math.min(containerWidth, 300); // Max 300px
+                canvas.width = newSize;
+                canvas.height = newSize;
+                // Update centrale waarden na canvas resize
+                centerX = canvas.width / 2;
+                centerY = canvas.height / 2;
+                radius = canvas.width / 2;
+
+                drawColorWheel();
+                updateColorDisplay(parseInt(hueSlider.value, 10)); // Update slider marker
+                clearAndRedrawCsvMarkers(); // Teken CSV markers opnieuw
+            };
+
+            // Initialisatie bij laden van de pagina
+            drawColorWheel();
+            updateColorDisplay(parseInt(hueSlider.value, 10));
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas(); // Eerste keer aanroepen bij laden
+        });
+
+        // Globale functie om aan te roepen door Python tool code
+        // Deze functie zal door de Python-omgeving worden aangeroepen om de CSV-inhoud te injecteren.
+        function loadCsvContentFromTool(csvContent) {
+            // parseCsvAndAddMarkers is nu een globale functie.
+            if (typeof parseCsvAndAddMarkers === 'function') {
+                parseCsvAndAddMarkers(csvContent);
+            } else {
+                console.error('parseCsvAndAddMarkers is niet gedefinieerd wanneer content wordt geladen vanuit de tool.');
+            }
+        }
+    </script>
+</body>
+</html>
