@@ -7,6 +7,7 @@ from PIL.ExifTags import TAGS
 from .HSL import rgb_to_hsl
 import io
 from .output_to_csv import output_to_csv
+from .jpeg_to_png import convert_and_remove_background
 
 analyse_bp = Blueprint('analyse', __name__, template_folder='templates')
 
@@ -157,3 +158,40 @@ def kleurwiel():
     Toont het interactieve HSL kleurwiel.
     """
     return render_template('kleurwiel.html')
+
+@analyse_bp.route('/remove_background', methods=['GET', 'POST'])
+def remove_background():
+    image_exts = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff')
+    uploaded_images = [f for f in os.listdir(UPLOAD_FOLDER) if f.lower().endswith(image_exts)]
+    
+    message = None
+    error = None
+    original_image_name = None
+    processed_image_name = None
+
+    if request.method == 'POST':
+        selected_file = request.form.get('image_file')
+        if not selected_file:
+            error = "Geen afbeelding geselecteerd."
+        else:
+            original_image_path = os.path.join(UPLOAD_FOLDER, selected_file)
+            
+            name, ext = os.path.splitext(selected_file)
+            output_filename = f"{name}-result.png"
+            output_image_path = os.path.join(UPLOAD_FOLDER, output_filename)
+
+            success = convert_and_remove_background(original_image_path, output_image_path)
+            
+            if success:
+                message = f"Achtergrond succesvol verwijderd en opgeslagen als {output_filename}"
+                original_image_name = selected_file
+                processed_image_name = output_filename
+            else:
+                error = "Fout bij het verwijderen van de achtergrond. Controleer de API-sleutel en het logboek."
+
+    return render_template('remove_background.html', 
+                           uploaded_images=uploaded_images, 
+                           message=message, 
+                           error=error,
+                           original_image_name=original_image_name,
+                           processed_image_name=processed_image_name)
