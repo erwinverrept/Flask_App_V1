@@ -20,7 +20,13 @@ UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
 # Zorg ervoor dat de 'uploads' map bestaat
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Initialiseer de Google Vision client
+# --- NIEUWE CODE VOOR GOOGLE CLOUD CREDENTIALS EN INITIALISATIE VAN DE CLIENT ---
+# Check if credentials file exists
+credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+if not credentials_path or not os.path.exists(credentials_path):
+    raise Exception("Google Cloud credentials not found. Please set GOOGLE_APPLICATION_CREDENTIALS environment variable.")
+
+# Initialize the client
 vision_client = vision.ImageAnnotatorClient()
 
 # --- De functie analyseer_afbeelding blijft ongewijzigd ---

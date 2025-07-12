@@ -12,3 +12,5 @@ analyse/uploads/Blauwe_Topaz-6429.jpg
 wordpress-vision-api-v2.json
 wordpress-vision-api-v2.json
 wordpress-vision-api-v2.json
+credentials/
+.env
