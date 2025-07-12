@@ -12,8 +12,11 @@ from .jpeg_to_png import convert_and_remove_background
 analyse_bp = Blueprint('analyse', __name__, template_folder='templates')
 
 # Configureer een map om uploads op te slaan
-UPLOAD_FOLDER = '/home/erwin/app/project/Flask_App/analyse/uploads'
-
+# The original UPLOAD_FOLDER was hardcoded to a path for a different user ('erwin').
+# This caused a PermissionError when running as the 'pi' user.
+# We'll change it to a path relative to the current file's location.
+basedir = os.path.abspath(os.path.dirname(__file__))
+UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
 # Zorg ervoor dat de 'uploads' map bestaat
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 

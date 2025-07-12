@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "wordpress-vision-api-v2",
+  "private_key_id": "0acc61dc178573e3190f15c1c8b991cccd708c61",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDcvbyXsOAQxvW0\nQz5W0HYjPsbXD6v3Blqf7NmnaOV01DJMTy2mMGsVBXaRsEZ86m7x4NJ9OHz8uPD0\n7z19aZEvOhwcdgHIWMPga/vRdqs3r5VIiKCBHP9RaliBmV62zf4JfhPU5J9f+dDv\nAfqE70c16BuUEO5UO/hVcAGHut/4WjH/+FfgXY6wo2HjSxZ/JpH7iuHbIM9lO9zL\njyeEOzioin3Lk1CSJA7kCJjAVADfA6uHP9/yUgVyH36aDZVmAiyH5ZzNWO1h1Icy\nlal2XfJtdMrl8RllVwzOWfQSo4ZKpN+Pzgqni5Af3e1Z4pPTCnj4+zyiOX8PgTu+\nUMn3PseXAgMBAAECggEAO9BkDpyckp8/DAoelcqmAHXtzm/OMsEzhFtbPRxU9Nvd\nB0V7QqmjEo6o6uBfsVCbIIrBrrHEWHzKuiwrttSIxUnTPTkS0ZWP+jt4gHFOAuhe\npMl06JeRbZ/J/NAw1Isr96mEuS78KrcYUPNxzVzDKI3ND0mpMwUPDSOtHnjaYMKa\n/q9B9kZOQwvCw2ObpBBDZL503dKeTi443/gx6J/GWsaA/aETidP0m544IhajH7T0\nmpiLI4kEDZS4oV5MzDw24lWcsN+RfXndI27vZxyeQYd342/LwhSV/s2jI573dgtn\n7SHoEPiDyuvqW1eIVIL6KbKPtdo6iaQbgoIZ49+hSQKBgQD61n7BKasCmd2QAkcr\nW5bFfWcAZn/CxNyQgoMd4To7nG+KMX8OpNKIIVHV5/SV9lh1Noptb6QzdQK0Ohlh\nnD9gITbnvUexo7KpnRliQKW3xls/Gak8kBIODB1S5/Radb3zPHZaCmrgsMWxSPOU\nVE6OusXrD26PfGdooC+yMS7AWQKBgQDhSK5gbIZxK36wS6vU1Ag0u2ikQ7Aw67Nk\nCh8tGDb31db01vZsBaUaGgoB/QrNT+1Eb0SOG6mjcksN8IlYEl9OpyCpmGgYwzVt\nCWwQHNSsTa8AV682cxvHntvk8Ce/5Po2MNHLbbpYTLIq/oxMhjuijwprRxjccmsl\n9nEB5CBJbwKBgDarwXzAZDFw78WPeYuNrtLkfiqsLHR7C8fDamh8yoBrnDP2jcbX\nTbu152xD3h9BTg5eENXBW3yLqEc30ohf0cBV/O2NZ67kCvDE+N9dT8E6TnD2WtiE\nXisJoOqM+8krmHcHWpRNaPYIEU6Oo+hUZ7rcIn8VIffMGY3IPB0Ocy4hAoGAYJ8X\niuuAzdDlyR7rV6CI1HT8cFdHnfO5QNLGhES6bpkcVG5Nyg6xvPwmBqxMkboR/SPr\ntzdODnfakOP1Q/y9O7KaY6KmIti2dUlxO4fh/vRidjclQqkj5P3ROeN2aOsAFXXi\nxOkO3wgl8iKyca+wrAvFYDViCEpagjGsTi9VWakCgYBEZ721E3V9aCbY1qTNqDDp\nyPY4+MJpDkuc90K5jqTEymtYta9nq8wtU8RyKtMi8fu8Dd50jmn1wOMNYDWpcWK8\nNaE0T+SeSiXtalcggC5GanFEwMujbZ648MnOMpY/tkOg1veH5g7OJbF6Cz9bIABg\nSgdAWRuwgzZY/QuYwosBww==\n-----END PRIVATE KEY-----\n",
+  "client_email": "wordpress-vision-user@wordpress-vision-api-v2.iam.gserviceaccount.com",
+  "client_id": "116194085343951762903",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/wordpress-vision-user%40wordpress-vision-api-v2.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
