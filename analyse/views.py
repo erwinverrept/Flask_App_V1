@@ -21,7 +21,8 @@ UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # --- NIEUWE CODE VOOR GOOGLE CLOUD CREDENTIALS EN INITIALISATIE VAN DE CLIENT ---
-# Check if credentials file exists
+# Check if credentials file exists and is set in the environment variable
+
 credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 if not credentials_path or not os.path.exists(credentials_path):
     raise Exception("Google Cloud credentials not found. Please set GOOGLE_APPLICATION_CREDENTIALS environment variable.")
